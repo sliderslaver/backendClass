@@ -4,6 +4,8 @@ import com.example.Simone.client.CatFactClient;
 import com.example.Simone.client.UserDetailClient;
 import com.example.Simone.database.UserDatabase;
 import com.example.Simone.exception.UserGenericErrorException;
+import com.example.Simone.mapper.AllToGarbageDTO;
+import com.example.Simone.mapper.CatFactToFattiSuiGatti;
 import com.example.Simone.model.*;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,12 @@ public class UserService {
 
     @Autowired
     private CatFactClient catFactClient;
+
+    @Autowired
+    private CatFactToFattiSuiGatti catFactToFattiSuiGatti;
+
+    @Autowired
+    private AllToGarbageDTO allToGarbageDTO;
 
     public String retrieveUser(String userName) {
         if (userDatabase.retrieveUserName().contains(userName)) {
@@ -54,7 +62,7 @@ public class UserService {
     public FattiSuiGatti retrieveGattiFatti() {
         return Optional.ofNullable(catFactClient.getCatFact())
                 .map(HttpEntity::getBody)
-                .map(el -> FattiSuiGatti.builder().fatto(el.getFact()).build())
+                .map(catFactToFattiSuiGatti::from)
                 .orElseThrow(RuntimeException::new);
     }
 
@@ -71,14 +79,12 @@ public class UserService {
 
         val fattoSuiGatti =  Optional.ofNullable(catFactClient.getCatFact())
                 .map(HttpEntity::getBody)
-                .map(CatFact::getFact)
                 .orElseThrow(RuntimeException::new);
 
-        return GarbageDTO.builder()
-                .fattoSulProprioGatto(fattoSuiGatti)
-                .id(userDetail.getId())
-                .eta(userDetail.getAge())
-                .nome(username)
-                .build();
+        return allToGarbageDTO.from(username, userDetail, fattoSuiGatti);
+    }
+
+    public static String randomString(String nome) {
+        return nome.concat(" lo stupido");
     }
 }
